@@ -1,0 +1,430 @@
+---
+title: "PROJECT_STATISTIC"
+author: "NGUYEN NGOC PHUNG"
+date: "12/23/2020"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+## INTRODUCTION
+
+This project almost places focus on data of BRFSS in 2013 by analyzing, visualizing and using techniques (ex: hypothesis testing) in order to answer some questions. The Behavioral Risk Factor Surveillance System (BRFSS) is a collaborative project between all of the states in the United States (US) and participating US territories and the Centers for Disease Control and Prevention (CDC). The BRFSS is administered and supported by CDC’s Population Health Surveillance Branch, under the Division of Population Health at the National Center for Chronic Disease Prevention and Health Promotion. BRFSS is an ongoing surveillance system designed to measure behavioral risk factors for the non-institutionalized adult population (18 years of age and older) residing in the US. 
+
+The brief summary of BRFSS data is described in the following HTML file (Note:you have to download to open the file)
+
+[BRFSS data](https://drive.google.com/file/d/1Cun2EU544Muhw9JoETFYy3yEAStEG9Y1/view?usp=sharing)
+
+The data includes the following:
+
+MAIN SURVEY: Main survey is divided into 17 Sections
+
+Section 0 - Record Identification
+
+Section 1 - Health Status
+
+Section 2 - Healthy Days - Health-Related Quality of Life
+
+Section 3 - Health Care Access
+
+Section 4 - Inadequate Sleep
+
+Section 6 - Cholesterol Awareness
+
+Section 7 - Chronic Health Conditions
+
+Section 8 - Demographics
+
+Section 9 - Tobacco Use
+
+Section 10 - Alcohol Consumption
+
+Section 11 - Fruits and Vegetables
+
+Section 12 - Exercise (Physical Activity)
+
+Section 13 - Arthritis Burden
+
+Section 14 - Seatbelt Use
+
+Section 15 - Immunization
+
+Section 16 - HIV/AIDS
+
+
+OPTIONAL MODULE: Optional module contains 22 small modules. However, we will not use data from this part.
+
+
+
+## DATA AND RESULTS
+
+### LOAD PACKAGE AND DATA
+
+```{r}
+# LOAD PACKAGE AND DATA @-@
+library(ggplot2)
+library(dplyr)
+library(cowplot)
+library(plotly)
+load('brfss2013.RData')
+``` 
+
+
+
+### QUESTION 1 (PIE CHART) 
+
+#### COMPARE THE GENERAL HEALTH OF MALE AND FEMALE
+
+#### DATA STRUCTURE
+```{r}
+# This question we use 2 main attributes:
+# genhlth: General Health 
+# sex: respondents sex
+str(brfss2013$genhlth)
+str(brfss2013$sex)
+```
+
+#### STEP 1: (FILTER DATA) GET THE DATA FRAME OF FEMALE AND MALE 
+```{r}
+female_Q1<-brfss2013 %>% 
+  filter(as.integer(sex)==2,!is.na(genhlth))
+
+male_Q1<-brfss2013 %>% 
+  filter(as.integer(sex)==1,!is.na(genhlth))
+```
+
+#### STEP 2: PLOT 2 PIE CHARTS OF FEMALE AND MALE WITH RESPECT TO THE GENERAL HEALTH 
+```{r}
+sum_F<-female_Q1 %>%
+  count(genhlth)
+
+sum_F
+
+sum_M<-male_Q1 %>%
+  count(genhlth)
+
+sum_M
+
+plot_F<-ggplot(sum_F, aes(x = "", y = n, fill = genhlth)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar("y", start = 0)+
+  theme_void()
+
+plot_M<-ggplot(sum_M, aes(x = "", y = n, fill = genhlth)) +
+  geom_bar(width = 1, stat = "identity", color = "white") +
+  coord_polar("y", start = 0)+
+  theme_void()
+
+plot_grid(plot_F,plot_M)
+
+```
+
+#### CONCLUSION
+#### By the charts we can see that proportion of general health of male and female is merely the same, with categories "very good" and "good" hold the majority *-*
+
+
+
+
+### QUESTION 2: (SEGMENTED BAR CHART) 
+
+#### IS EDUCATION LEVEL CORRELATED WITH INCOME LEVEL AND EMPLOYMENT STATUS ?
+
+#### DATA STRUCTURE
+```{r}
+# INTRO
+# This question we use 3 main attributes:
+# educa: Enducation level
+# income2: Income level
+# employ1: Employment Status
+
+str(brfss2013$educa)
+str(brfss2013$income2)
+str(brfss2013$employ1)
+```
+
+#### STEP 1: (FILTER DATA) GET THE DATA FRAME FOR INCOME LEVEL AND EMPLOYMENT STATUS
+
+```{r}
+income_Q2<-brfss2013 %>%
+  filter(!is.na(educa),!is.na(income2))
+
+employ_Q2<-brfss2013 %>%
+  filter(!is.na(educa),!is.na(employ1))
+```
+#### STEP 2: PLOT 2 SEGMENTED BAR CHARTS TO SEE THE RELATIONSHIP BETWEEN (EDUCATION & INCOME) AND (EDUCATION & EMPLOYMENT)
+
+```{r}
+ggplot(data = income_Q2, aes(x = educa, fill = income2)) +
+  geom_bar()
+
+ggplot(data = employ_Q2, aes(x = educa, fill = employ1)) +
+  geom_bar()
+``` 
+
+#### CONCLUSION
+
+#### (Education & Income)
+#### The bar chart show that education level and income level have strong correlation, which means that higher education level will lead to higher salary. This is best demonstrated in the 2 last column, people who have education level at college 4 years or more have the income from $75,000 or more 3 times higher than people who have education level at 1 year to 3 years. 
+
+#### (Education & Employment)
+#### The second bar chart show the correlation between  education level and employment status. We can conclude from the chart that people who have education level at grade 12 or higher, will have much higher chance to be employed compare to the others.
+
+
+
+
+### QUESTION 3: (BOX PLOT) 
+
+#### WHAT IS THE DIFFERENCES IN HOURS OF SLEEP BETWEEN THOSE DO HAVE DIFFICULTY CONCENTRATING AND REMEMBERING AND THOSE WHO DO NOT @-@
+
+#### DATA STRUCTURE
+```{r}
+# This question we use 2 main attributes:
+# sleptim1:How much time do you sleep 
+# decide: Difficulty concentrating or remembering
+str(brfss2013$sleptim1)
+str(brfss2013$decide)
+```
+
+#### STEP 1: (FILTER DATA) GET THE DATA FRAME FOR # OF SLEEP AND DIFFICULTY CONCENTRATING AND REMEMBERING
+
+```{r}
+Q3<-brfss2013 %>%
+  filter(!is.na(sleptim1),!is.na(decide))
+```
+
+#### STEP 2: SUMMARIZE HOURS OF SLEEP GROUP BY PEOPLE HAVING CONCENTRATING AND REMEMBERING OR NOT @-@
+
+```{r}
+Q3 %>% 
+  group_by(decide)%>%
+  summarise(mean=mean(sleptim1), median=median(sleptim1),Var=var(sleptim1),IQR=IQR(sleptim1),n=n())
+```
+
+#### STEP 3: DRAW THE BOX PLOT 
+
+```{r}
+ggplot(Q3, aes(x=decide, y=sleptim1, color=decide)) +
+  geom_boxplot()+
+  labs(title="Plot of concentration difficulty and # of sleep",x="have concentration difficulty", y = "Hour of sleep")+
+  theme_classic()
+
+```
+
+#### CONCLUSION
+
+#### Those who have concentration difficulty have their daily number of sleeping hours vary more than those do not have
+#### The mean hours of sleep of those having concentration difficulty is slightly smaller than the other (6.75<7.09)
+
+
+
+
+### QUESTION 4: (GEXAGONAL HEATMAP) 
+
+#### HOW MUCH SHOULD WE SLEEP IN ORDER TO MAINTAIN A GOOD PHYSICAL AND MENTAL HEALTH ?  @-@
+#### SIMILARLY, HOW MUCH SHOULD WE SLEEP IN ORDER TO MAINTAIN A GOOD GENERAL HEALTH? DOES THE RESULT CONSISTENT WITH ABOVE RESULT? @-@
+
+#### DATA STRUCTURE
+
+```{r}
+# This question we use 4 main attributes:
+# sleptim1:How much time do you sleep 
+# physhlth:Number Of Days Physical Health Not Good
+# menthlth:Number Of Days Mental Health Not Good
+# genhlth: General Health
+
+str(brfss2013$sleptim1)
+str(brfss2013$physhlth)
+str(brfss2013$menthlth)
+str(brfss2013$genhlth)
+```
+
+
+#### STEP 1: (FILTER DATA) GET THE DATA FRAME FOR NUMBER OF DAYS PHYSICAL HEALTH AND MENTAL HEALTH NOT GOOD @-@
+#### Note: Since we have some outliers, hence, we have to remove all of them.
+
+```{r}
+health<-brfss2013 %>%
+  filter(!is.na(sleptim1),!is.na(physhlth),!is.na(menthlth),!is.na(genhlth),sleptim1<=24,menthlth<=31)
+```
+
+#### STEP 2: DRAW THE GEXAGONAL HEATMAP FOR BOTH PHYSICAL AND MENTAL HEALTH AND COMPARE IT TO GENERAL HEALTH
+
+```{r}
+# Physical health
+ggplot(health,aes(sleptim1,physhlth))+
+  geom_hex(bins=40)+
+  labs(colour="count", x="hours of sleep", y="# of days physical health not good")+
+  scale_fill_continuous(type="viridis") + 
+  theme_bw()
+
+# Mental health
+ggplot(health,aes(sleptim1,menthlth))+
+  geom_hex(bins=40)+
+  labs(colour="count", x="hours of sleep", y="# of days mental health not good")+
+  scale_fill_continuous(type="viridis") + 
+  theme_bw()
+ 
+# General health
+ggplot(health,aes(sleptim1,genhlth)) + 
+  geom_hex(bins=40)+ 
+  labs(colour="count", x="hours of sleep", y="general health")+
+  scale_fill_continuous(type="viridis") +
+  theme_bw()
+```
+
+#### CONCLUSION:
+
+#### PHYSICAL &MENTAL: From the heatmap of physical and mental health, we see that those who sleep with recommended 6-9 hours a day have smaller number of days having physical and mental health in poor condition about 0-10 days. Moreover, if people sleep with ideal hours, the number of people with many days of having physical and mental health in poor condition will decrease. 
+
+#### GENERAL: Clearly, we see that the above result is consistent with the heatmap for general health with those who sleep 6-9 hours a day told that they have very good or excellent general health. Thus, people who sleep over 9 hours and have large number days of having physical and mental health in poor condition usually have fair and poor gereral health.
+
+
+
+### QUESTION 5: (HYPOTHESIS TESTING + DENSITY PLOT)
+#### Let X: weight of male respondents of population
+####     Y: weight of male respondents of population
+#### Assumption: X ~ N(u1,var1) , Y ~ N(u2,var2)
+#### Check the following hypothesis with 95% confidence interval
+#### H0:  u1 - u2 = 37 (pounds)
+#### Ha:  u1 - u2 != 37 (pounds)
+
+#### DATA STRUCTURE
+
+```{r}
+# This question we use 2 main attributes:
+# sex: Respondents Sex
+# weight2: Reported Weight In Pounds
+str(brfss2013$sex)
+str(brfss2013$weight2)
+```
+
+#### STEP 1: (FILTER DATA) GET THE DATA FRAME FOR WEIGHT OF MALE AND FEMALE
+
+```{r}
+Male<-brfss2013 %>%
+  filter(!is.na(weight2),!is.na(sex),as.integer(weight2)<300,as.integer(sex)==1)
+
+Female<-brfss2013 %>%
+  filter(!is.na(weight2),!is.na(sex),as.integer(weight2)<300,as.integer(sex)==2)
+
+Male_weight<-as.integer(Male$weight2)
+Female_weight<-as.integer(Female$weight2)
+```
+
+#### STEP 2: VISUALIZE THE DATA FOR MALE AND FEMALE BY DENSITY PLOT
+
+```{r}
+M <- density(Male_weight)
+plot(M, main="Weight of Male")
+polygon(M, col="blue4", border="black")
+
+# so # of observation for male is 200245
+n<-200245
+
+F <- density(Female_weight)
+plot(F, main="Weight of Female")
+polygon(F, col="coral", border="black")
+
+# so # of observation for female is 287093
+m<-287093
+```
+
+#### STEP 3: CALCULATE TEST STATISTIC
+
+#### Denote V(X) and V(Y) be the sample variance of (X1,...,Xn) and (Y1,...,Ym) respectively
+#### Since both m,n are large , we have TS=(mean(X)-mean(Y)-30)/sqrt(V(X)/n + V(Y)/m)
+
+```{r}
+mean_X<-mean(Male_weight)
+mean_Y<-mean(Female_weight)
+V_X<- (sd(Male_weight))^2
+V_Y<- (sd(Female_weight))^2
+P<-matrix(c(mean_X,V_X,mean_Y,V_Y),2,2)
+dimnames(P)<-list(c("mean","sample var"),c("X","Y"))
+P
+Test_stat<-(mean_X-mean_Y-37)/sqrt((V_X/n)+(V_Y/m))
+Test_stat
+```
+
+#### STEP 4: CALCULATE P-VALUE
+#### we have p-value= 2P(Z>abs(Test statistic))
+
+```{r}
+1- pnorm(abs(Test_stat))
+
+```
+
+#### CONCLUSION: 
+#### Since anpha= 5% > p-value= 0.002061974. Hence, we reject the null-hypothesis H0
+#### For any anpha >= 3%, we have appropriate evidence to reject the null-hypothesis
+#### For any anpha <= 2%, we fail to reject the null-hypothesis
+#### From the plot of weight of male, we can see that men who have weight from 50 to 150 pounds have large density. Moreover, men with weight approximate 100 pounds have large density to 0.012. 
+#### From the plot of weight of female, we can see that women who have weight from 50 to 100 pounds have large density. Moreover, women with weight about 50 pounds have large density to 0.012.
+#### Thus, at the 5% significance level, there is inufficient evidence to support the claim that the mean score on the test was equal 37 pounds.
+
+
+
+
+### QUESTION 6: (3D PLOT)
+
+#### Response variable: (poorhlth) number of days having poor physical or mental health in the last 30 days
+#### Predictor: Physical exercise, diet (fruit and vegetables), hours of sleep
+
+#### DATA STRUCTURE
+```{r}
+str(brfss2013$exerany2)
+str(brfss2013$poorhlth)
+str(brfss2013$fruit1)
+str(brfss2013$sleptim1)
+```
+
+#### STEP 1:(FILTER DATA) GET DATA FRAME
+
+```{r}
+data<-brfss2013 %>%
+  filter(!is.na(exerany2),!is.na(poorhlth),!is.na(fruit1),!is.na(sleptim1),poorhlth<=30,sleptim1<24,fruit1<400)
+```
+
+#### STEP 2: PLOT DATA (3D PLOT)
+
+```{r}
+boxplot( poorhlth~exerany2, data = data)
+
+
+ggplot(data,aes(sleptim1,poorhlth))+
+  geom_hex(bins=40)+
+  labs(colour="count", x="hours of sleep", y="# of days mental health not good")+
+  scale_fill_continuous(type="viridis") + 
+  theme_bw()
+
+ggplot(data,aes(fruit1,poorhlth))+
+  geom_hex(bins=40)+
+  labs(colour="count", x="hours of sleep", y="# of days mental health not good")+
+  scale_fill_continuous(type="viridis") + 
+  theme_bw()
+
+```
+
+![](![](C:\Users\Win 10\Pictures\S1.png)
+![](C:\Users\Win 10\Pictures\STAT.png)
+
+#### CONCLUSION
+
+#### Those respondents who usually do exercise, eat fruit and vegetables and get adequate sleep are less likely to have poor physical and mental health than others.
+#### Generally, physical exercise, diet and sleep quality all play important role in maintaining general good health.
+
+
+
+
+## REFERRENCE
+
+[BRFSS web site](http://www.cdc.gov/brfss/)
+
+[BRFSS Questionnaire (Mandatory and Optional Modules)](http://www.cdc.gov/brfss/questionnaires/pdf-ques/2013%20BRFSS_English.pdf)
+
+[BRFSS Codebook](http://www.cdc.gov/brfss/annual_data/2013/pdf/CODEBOOK13_LLCP.pdf)
+
+[BRFSS Guide to Calculated Variables](http://www.cdc.gov/brfss/annual_data/2013/pdf/2013_Calculated_Variables_Version15.pdf)
+
+[BRFSS Guide to Optional Modules Used, by State](http://apps.nccd.cdc.gov/BRFSSModules/ModByState.asp?Yr=2013)
+
